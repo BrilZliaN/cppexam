@@ -9,7 +9,7 @@
 
 template<typename T>
 struct optional {
-    optional() = default;
+    optional() : nonEmpty(false){};
 
     ~optional() {
         clear();
@@ -19,7 +19,14 @@ struct optional {
         ::new ((void *)::std::addressof(object)) T(other);
     }
 
-    optional(optional const &other) = default;
+    optional(optional const &other) {
+        if (other.nonEmpty) {
+            nonEmpty = true;
+            ::new ((void *)::std::addressof(object)) T(*other);
+        } else {
+            nonEmpty = false;
+        }
+    };
 
     optional &operator=(optional const &other) {
         optional copy = other;
@@ -35,7 +42,7 @@ struct optional {
     }
 
     explicit operator bool() const {
-        return !nonEmpty;
+        return nonEmpty;
     }
 
     T &operator*() {
@@ -111,7 +118,7 @@ private:
         if (first.nonEmpty && second.nonEmpty) {
             return *first == *second;
         }
-        return first.nonEmpty ^ second.nonEmpty;
+        return first.nonEmpty == second.nonEmpty;
     }
 
     friend bool operator!=(optional<T> const &first, optional<T> const &second) {
