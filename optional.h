@@ -71,7 +71,6 @@ struct optional {
                 T &first = *reinterpret_cast<T *>(::std::addressof(object));
                 T &second = *reinterpret_cast<T *>(::std::addressof(other.object));
                 std::swap(first, second);
-                std::swap(nonEmpty, other.nonEmpty);
             } else {
                 ::new ((void *)::std::addressof(object)) T(*other);
                 nonEmpty = true;
