@@ -9,20 +9,20 @@
 
 template<typename T>
 struct optional {
-    optional() : nonEmpty(false){};
+    optional() : nonEmpty(false) {};
 
     ~optional() {
         clear();
     }
 
     optional(T const &other) : nonEmpty(true) {
-        ::new ((void *)::std::addressof(object)) T(other);
+        new(std::addressof(object)) T(other);
     }
 
     optional(optional const &other) {
         if (other.nonEmpty) {
             nonEmpty = true;
-            ::new ((void *)::std::addressof(object)) T(*other);
+            new(::std::addressof(object)) T(*other);
         } else {
             nonEmpty = false;
         }
@@ -68,18 +68,16 @@ struct optional {
     void swap(optional &other) {
         if (other.nonEmpty) {
             if (nonEmpty) {
-                T &first = *reinterpret_cast<T *>(::std::addressof(object));
-                T &second = *reinterpret_cast<T *>(::std::addressof(other.object));
+                T &first = *reinterpret_cast<T *>(std::addressof(object));
+                T &second = *reinterpret_cast<T *>(std::addressof(other.object));
                 std::swap(first, second);
             } else {
-                ::new ((void *)::std::addressof(object)) T(*other);
+                new(std::addressof(object)) T(*other);
                 nonEmpty = true;
                 other.clear();
             }
         } else if (nonEmpty) {
-            ::new ((void *)::std::addressof(other.object)) T(*(*this));
-            other.nonEmpty = true;
-            clear();
+            other.swap(*this);
         }
     }
 
