@@ -1,75 +1,59 @@
+#include "sequence.h"
 #include <iostream>
-#include "optional.h"
+#include <cstring>
+#include <exception>
+#include <algorithm>
 
-using std::cout;
-using std::endl;
+struct case_insensitive_char_traits : public std::char_traits<char> {
+    static char to_upper(char ch) { return std::toupper((unsigned char) ch); }
 
-struct copyable {
-    int a;
-    int b;
+    static bool eq(char c1, char c2) { return to_upper(c1) == to_upper(c2); }
 
-    copyable(int x, int y) {
-        a = x;
-        b = y;
+    static bool lt(char c1, char c2) { return to_upper(c1) < to_upper(c2); }
+
+    static int compare(const char *s1, const char *s2, size_t n) {
+        while (n-- != 0) {
+            if (to_upper(*s1) < to_upper(*s2)) return -1;
+            if (to_upper(*s1) > to_upper(*s2)) return 1;
+            ++s1;
+            ++s2;
+        }
+        return 0;
     }
 
-    copyable() = delete;
+    static const char *find(const char *s, int n, char a) {
+        auto const ua(to_upper(a));
+        while (n-- != 0) {
+            if (to_upper(*s) == ua)
+                return s;
+            s++;
+        }
+        return nullptr;
+    }
 };
 
-template <typename T>
-bool isEmpty(optional<T> const& o) {
-    if (o) {
-        return true;
-    }
-    return false;
-}
+struct case_insensitive_assign_char_traits : public std::char_traits<char> {
+    static void assign(char &r, const char &a) { r = std::tolower(a); }
 
-template <typename T>
-bool testEmpty(optional<T> const& o) {
-    bool empty = isEmpty(o);
-    cout << "isEmpty: " << empty << endl;
-    return empty;
-}
+    static char *assign(char *p, std::size_t count, char a) { return std::fill_n(p, count, std::tolower(a)); }
+
+    static char_type* copy(char_type* dest, const char_type* src, std::size_t count) {
+        return std::transform(src, src + count, dest, [](char c) { return std::tolower(c); });
+    }
+};
+
+template<class T, class Traits>
+using sequence = sequence<T, Traits>;
+using char_sequence = sequence<char, std::char_traits<char>>;
+using char_sequence_ci = sequence<char, case_insensitive_char_traits>;
+using char_sequence_ci_assign = sequence<char, case_insensitive_assign_char_traits>;
 
 int main() {
-    optional<copyable> empty;
-    optional<copyable> o(copyable(1, 2));
-    optional<int> a(3);
-    optional<int> b(4);
-    optional<int> c;
-    cout << "Empty\n";
-    testEmpty(empty);
-    cout << "Copyable\n";
-    testEmpty(o);
-    cout << "Contents: " << o->a << " " << o->b << endl;
-    cout << "a\n";
-    testEmpty(a);
-    cout << "Contents: " << *a << endl;
-    ++(*a);
-    cout << "Contents (+1): " << *a << endl;
-    cout << "b\n";
-    testEmpty(b);
-    cout << "Contents: " << *b << endl;
-    --(*b);
-    cout << "Contents: (-1) " << *b << endl;
-    cout << "c\n";
-    testEmpty(c);
-    swap(a, b);
-    cout << "Swapped a and b " << *a << " " << *b << endl;
-    cout << "empty and o " << isEmpty(empty) << " " << isEmpty(o) << endl;
-    swap(empty, o);
-    cout << "Swapped empty and o " << isEmpty(empty) << " " << isEmpty(o) << endl;
-    swap(empty, o);
-    cout << "Swapped (2) empty and o " << isEmpty(empty) << " " << isEmpty(o) << endl;
-//    cout << "empty < o" << (empty < o) << endl; //compile error
-//    cout << "empty == o" << (empty == o) << endl; //compile error
-    cout << "a < b " << (a < b) << " (should be) " << (*a < *b) << endl;
-    cout << "a == b " << (a == b) << " (should be) " << (*a == *b) << endl;
-    cout << "a != b " << (a == b) << " (should be) " << (*a == *b) << endl;
-    cout << "a > b " << (a > b) << " (should be) " << (*a > *b) << endl;
-    cout << "c < b " << (c < b) << " (should be) 1"<< endl;
-    cout << "";
+    char_sequence_ci_assign a("AbAb");
+    std::string s(4, '0');
+    a.copy(&s[0], 4);
 
-    return 0;
+    bool ans = s == "abab";
+
+    std::cout << ans << std::endl;
 }
-
